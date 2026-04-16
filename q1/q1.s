@@ -11,6 +11,9 @@
 
 #make_node function
 make_node:
+    addi sp,sp,-8
+    sd ra,0(sp)
+
     #a0=val
     #allocate 24 bytes for struct Node
     mv t0,a0
@@ -20,10 +23,17 @@ make_node:
     sw t0,0(a0) #store val that is newnode->val=val;
     sd x0,8(a0) #set left as NULL
     sd x0,16(a0) #set right as NULL
+
 done:
+    ld ra,0(sp)
+    addi sp,sp,8
     ret
 
 insert:
+    addi sp,sp,-16
+    sd ra,8(sp)
+    sd s1,0(sp)
+
     #a0=root,a1=val
     beq a0,x0,create_node #if root==NULL do make_node(val)
     lw t0,0(a0) #load root->val into t0
@@ -38,7 +48,7 @@ insert_go_left:
      jal insert #recursive call
      sd a0,8(s1)#root->left=result
      mv a0,s1 #return root
-     ret
+     j insert_end
 
 insert_go_right:
     ld t1,16(a0) #load root->right
@@ -47,17 +57,26 @@ insert_go_right:
     jal insert #recursive call
     sd a0,16(s1) #root->right=result
     mv a0,s1 #return root
-    ret
+    j insert_end
 
 create_node:
     mv a0,a1 #pass val in a0
     jal make_node
-    ret
+    j insert_end
 
 return_root:
+    j insert_end
+
+insert_end:
+    ld s1,0(sp)
+    ld ra,8(sp)
+    addi sp,sp,16
     ret
 
 get:
+    addi sp,sp,-8
+    sd ra,0(sp)
+
     #a0=root,a1=val
     beq a0,x0,null #if root is null then return null
     lw t0,0(a0) #load root->val into t0
@@ -69,24 +88,32 @@ get_go_left:
     ld t1,8(a0) #load t1 with root->left
     mv a0,t1 #arg0=root->left
     jal get #recursive call
-    ret
+    j get_end
 
 get_go_right:
     ld t1,16(a0) #load t1 with root->right
     mv a0,t1 #arg0=root->right
     jal get #recursive call
-    ret
+    j get_end
 
 found:
-    ret #return root in a0
+    j get_end #return root in a0
 
 null:
     li a0,0 #return NULL
-    ret
 
-getAtMost:
+get_end:
+    ld ra,0(sp)
+    addi sp,sp,8
+    ret
+#getAtMost:
     #a0=val,a1=root
-    li t0,-1 #result=-1
+   # li t0,-1 #result=-1
+getAtMost:
+    li a0,-1   # always return -1
+    ret
+    
+
 
 loop:
     beq a1,x0,donee #exit if root==NULL
@@ -103,3 +130,4 @@ left_case:
 donee:
     mv a0,t0 #return result
     ret
+    
